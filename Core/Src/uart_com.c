@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "stm32f1_date_time.h"
 
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -86,48 +85,6 @@ static void Parser(char *request, char *response)
     sscanf(request, "%s %s",cmd, arg1);
     Device.DO = strtol(arg1, NULL, 16);
     strcpy(response, "OK");
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*--------------------- Date Time ------------------------------------------*/
-  /*--------------------------------------------------------------------------*/
-  //TIME 2023.11.30-08:39:30
-  else if(!strcmp(cmd, "TIME"))
-  {
-    struct tm tm_info = {0};
-    sscanf(request, "%s %d.%d.%d-%d:%d:%d",
-        cmd,
-        &tm_info.tm_year,
-        &tm_info.tm_mon,
-        &tm_info.tm_mday,
-        &tm_info.tm_hour,
-        &tm_info.tm_min,
-        &tm_info.tm_sec);
-
-    tm_info.tm_year = tm_info.tm_year - 1900;
-    tm_info.tm_mon = tm_info.tm_mon - 1;
-    DateTime_Set(&tm_info);
-
-    printf("%d.%d.%d-%d:%d:%d\r\n",
-        tm_info.tm_year,
-        tm_info.tm_mon,
-        tm_info.tm_mday,
-        tm_info.tm_hour,
-        tm_info.tm_min,
-        tm_info.tm_sec);
-
-    strcpy(response, "OK");
-  }
-  else if(!strcmp(cmd, "TIME?"))
-  {
-    struct tm tm_info = DateTime_Get();
-    sprintf(response,"%d.%d.%d-%d:%d:%d",
-        tm_info.tm_year + 1900,
-        tm_info.tm_mon + 1,
-        tm_info.tm_mday,
-        tm_info.tm_hour,
-        tm_info.tm_min,
-        tm_info.tm_sec);
   }
 
   else{

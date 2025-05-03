@@ -1,26 +1,32 @@
 /*
- * stm32f1_date_time.h
+ * ina226.h
  *
- *  Created on: Dec 31, 2023
+ *  Created on: Apr 28, 2025
  *      Author: marrob
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef DATETIME_STM32F1_DATE_TIME_H_
-#define DATETIME_STM32F1_DATE_TIME_H_
+#ifndef INA226_H_
+#define INA226_H_
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
-#include <time.h>
-
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void DateTime_Init(RTC_HandleTypeDef *hrtc);
-HAL_StatusTypeDef DateTime_Set(struct tm *tm_info);
-struct tm DateTime_Get(void);
 
 
-#endif /* DATETIME_STM32F1_DATE_TIME_H_ */
+#define INA226_OK      0
+#define INA226_FAIL    1
+
+
+#define INA226_REG_SHUNT_VOLTAGE  0x01
+#define INA226_REG_BUS_VOLTAGE    0x02
+#define INA226_REG_DIEID          0xFF
+
+
+uint8_t INA226_Read(I2C_HandleTypeDef *i2c, uint8_t devAddress, uint8_t regAddress, uint16_t *read_word);
+
+#endif /* INA226_H_ */
 
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/
