@@ -178,6 +178,11 @@ int main(void)
   TriClock_Init(&hi2c2);
 
 
+  Device.TriClock.OCXO1.Voltage = 1;
+  Device.TriClock.OCXO1.Current = 1.1;
+  Device.TriClock.OCXO1.Temperature = 1.2;
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -240,7 +245,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -447,7 +452,7 @@ static void MX_GPIO_Init(void)
                           |NVME_EN_Pin|ADC_SYNC_Pin|PC_INTERLOCK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, DISP_EN_Pin|LIVE_LED_Pin|STAT_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BLIGHT_EN_Pin|LIVE_LED_Pin|STAT_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : CLK_EN_Pin ETH_EN_Pin P20_EN_Pin P24_EN_Pin
                            NVME_EN_Pin ADC_SYNC_Pin PC_INTERLOCK_Pin */
@@ -458,8 +463,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DISP_EN_Pin LIVE_LED_Pin STAT_LED_Pin */
-  GPIO_InitStruct.Pin = DISP_EN_Pin|LIVE_LED_Pin|STAT_LED_Pin;
+  /*Configure GPIO pins : BLIGHT_EN_Pin LIVE_LED_Pin STAT_LED_Pin */
+  GPIO_InitStruct.Pin = BLIGHT_EN_Pin|LIVE_LED_Pin|STAT_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

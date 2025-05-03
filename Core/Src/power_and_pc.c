@@ -36,25 +36,34 @@ inline static bool DoesRun_NVME(void);
 static uint16_t StatusRead(void);
 
 
-void DisplayOn(void);
-void DisplayOff(void);
+
 
 /* Private user code ---------------------------------------------------------*/
 
 
 void PwrSeq_Init(void)
 {
-  //--- Init ---
 
-  PowerOn_CLK();
+  //--- Minden tápegység megy ---
+  HAL_Delay(100);
   PowerOn_ETH();
+  HAL_Delay(100);
   PowerOn_P20();
+  HAL_Delay(100);
   PowerOn_P24();
+  HAL_Delay(100);
+  PowerOn_CLK();
+  HAL_Delay(100);
   PowerOn_NVME();
+  HAL_Delay(100);
+
+
+  //--- Az PC Start Interlock relé mindig meg van húzva ---
+  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_SET);
 
   Device.PC.State.Pre = false;
   Device.PC.State.Curr = false;
-  Device.PC.DisplayIsOn = false;
+  Device.PC.BacklightIsOn = false;
 
 }
 
@@ -108,13 +117,11 @@ void PwrSeq_Task(void)
   {
     if(HAL_GetTick() - pcStartTimestamp > 10000)
     {
-      /*
-       if(DisplayIsOn == false)
+       if(Device.PC.BacklightIsOn == false)
        {
         //ha fut a PC és letet az idő, és nincs bekacsolva a kijelző, akkor bekapcsolja a kijelzőt
-         DisplayOn();
+         Backlight_On();
        }
-       */
     }
   }
 }
@@ -159,16 +166,39 @@ inline static bool DoesRun_NVME(void){
 }
 
 
-void DisplayOn(void)
+//--- Backlight  ---
+static TIM_HandleTypeDef *_htim;
+void Backlight_On(void)
 {
-  HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(BLIGHT_EN_GPIO_Port, BLIGHT_EN_Pin, GPIO_PIN_SET);
 }
 
-void DisplayOff(void)
+void Backlight_Off(void)
 {
-  HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(BLIGHT_EN_GPIO_Port, BLIGHT_EN_Pin, GPIO_PIN_RESET);
 }
 
+void Backlight_Init(TIM_HandleTypeDef *htim)
+{
+  HAL_TIM_PWM_Start(htim,TIM_CHANNEL_2);
+  Backlight_SetDuty(50);
+  _htim = htim;
+}
+
+void Backlight_SetDuty(uint8_t percent)
+{
+  Device.PC.BacklightPercent = percent;
+  percent = 100 - percent;
+  uint32_t arr = __HAL_TIM_GET_AUTORELOAD(_htim);
+  uint32_t ccr = (arr * percent) / 100;
+  __HAL_TIM_SET_COMPARE(_htim,TIM_CHANNEL_2, ccr);
+
+}
+
+uint8_t Backlight_GetDuty(void)
+{
+  return Device.PC.BacklightPercent;
+}
 
 
 static uint16_t StatusRead(void)

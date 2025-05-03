@@ -28,10 +28,11 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include <stdbool.h>
 
 /* USER CODE END Includes */
 
@@ -67,12 +68,15 @@ typedef enum _TriClkStates_e
 
 typedef struct OCXO_st
 {
-  uint16_t Voltage;
-  uint16_t Current;
-  uint16_t INA226_DIE_ID;
-  uint16_t Temperature;
+  float Voltage;
+  float Current;
+  float Temperature;
+  uint16_t LSB_Voltage;
+  uint16_t LSB_Current;
+  uint16_t INA226_DIE_ID;  //diag only 0x2260
+  uint16_t LSB_Temperature;
   bool     IsLocked;
-  uint32_t WarmUpMs;
+//  uint32_t WarmUpMs;
 }OCXO_t;
 
 typedef struct _Devic_t
@@ -107,7 +111,8 @@ typedef struct _Devic_t
   struct _PC_st
   {
 
-    bool DisplayIsOn;
+    bool BacklightIsOn;
+    uint8_t BacklightPercent;
 
     struct
     {
@@ -183,6 +188,13 @@ void PwrSeq_Init(void);
 void PwrSeq_Task(void);
 
 
+//--- Backlight ---
+void Backlight_On(void);
+void Backlight_Off(void);
+void Backlight_Init(TIM_HandleTypeDef *htim);
+void Backlight_SetDuty(uint8_t percent);
+uint8_t Backlight_GetDuty(void);
+
 //--- TriClock ---
 void TriClock_Init(I2C_HandleTypeDef *i2ch);
 void TriClock_Task(void);
@@ -201,10 +213,10 @@ void TriClock_Task(void);
 #define P24_EN_GPIO_Port GPIOC
 #define NVME_EN_Pin GPIO_PIN_1
 #define NVME_EN_GPIO_Port GPIOC
-#define DISP_PWM_Pin GPIO_PIN_1
-#define DISP_PWM_GPIO_Port GPIOA
-#define DISP_EN_Pin GPIO_PIN_2
-#define DISP_EN_GPIO_Port GPIOA
+#define BLIGHT_PWM_Pin GPIO_PIN_1
+#define BLIGHT_PWM_GPIO_Port GPIOA
+#define BLIGHT_EN_Pin GPIO_PIN_2
+#define BLIGHT_EN_GPIO_Port GPIOA
 #define LIVE_LED_Pin GPIO_PIN_3
 #define LIVE_LED_GPIO_Port GPIOA
 #define DC_ON_N_Pin GPIO_PIN_4

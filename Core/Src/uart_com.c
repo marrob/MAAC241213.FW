@@ -86,6 +86,44 @@ static void Parser(char *request, char *response)
     Device.DO = strtol(arg1, NULL, 16);
     strcpy(response, "OK");
   }
+  else if(!strcmp(cmd, "BLIGHT?")){
+    sprintf(response, "%d",Device.PC.BacklightIsOn);
+  }
+  else if(!strcmp(cmd, "BLIGHT:ON")){
+   // Display_On();
+    strcpy(response, "OK");
+  }
+  else if(!strcmp(cmd, "BLIGHT:OFF")){
+   // Display_Off();
+    strcpy(response, "OK");
+  }
+  else if(!strcmp(cmd, "BLIGHT:PWM")){
+    uint8_t percent = strtol(arg1, NULL, 10);
+    Backlight_SetDuty(percent);
+    strcpy(response, "OK");
+  }
+
+  else if(!strcmp(cmd, "OCXO1:STAT?")){
+    sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
+        Device.TriClock.OCXO1.Voltage,
+        Device.TriClock.OCXO1.Current,
+        Device.TriClock.OCXO1.Temperature,
+        Device.TriClock.OCXO1.IsLocked?'L':'N');
+  }
+  else if(!strcmp(cmd, "OCXO2:STAT?")){
+    sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
+        Device.TriClock.OCXO2.Voltage,
+        Device.TriClock.OCXO2.Current,
+        Device.TriClock.OCXO2.Temperature,
+        Device.TriClock.OCXO2.IsLocked?'L':'N');
+  }
+  else if(!strcmp(cmd, "OCXO3:STAT?")){
+    sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
+        Device.TriClock.OCXO3.Voltage,
+        Device.TriClock.OCXO3.Current,
+        Device.TriClock.OCXO3.Temperature,
+        Device.TriClock.OCXO3.IsLocked?'L':'N');
+  }
 
   else{
     Device.Diag.UartUnknwonCnt++;

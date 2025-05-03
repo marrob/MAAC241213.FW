@@ -33,5 +33,18 @@ uint8_t TMP100_Read(I2C_HandleTypeDef *i2c, uint8_t devAddress, uint8_t regAddre
   return TMP100_OK;
 }
 
-
+/*
+ *  12bit, 1LSB: 0.0625C
+ *  1600LSB = 100C
+ *  16LSB = 1C -> 16LSB/C
+ *
+ *  pl:
+ *  1.) 25C -> 25C x 16LSB/C = 400LSB (0x190)
+ *  2.) 400LSB -> 400LSB x 0.0625 = 25C
+ */
+float TMP100_ConvertToCelsius(uint16_t data)
+{
+  data >>=4;
+  return  data * 0.0625F;
+}
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/

@@ -44,4 +44,54 @@ uint8_t INA226_Write(I2C_HandleTypeDef *i2c, uint8_t devAddress, uint8_t regAddr
   return INA226_OK;
 }
 
+
+/*
+float INA226_ConvertToCurrent(float shunt, uint16_t data)
+{
+  float result = 0;
+  if(data & 0x8000)
+  {
+    //negative number
+    data = ~data;
+    result = -1 * (data + 1) * 0.0000025F;
+    result = result / shunt;
+  }
+  else
+  {
+    result = data * 0.0000025F;
+    result = result / shunt;
+  }
+
+  return result;
+}
+*/
+
+// Bits: 15bit + 1sign
+// LSB:2.5uV
+// 0x8300 -> -80mV
+// INA226_ConvertToCurrentV2(1, 0x8300);
+//ez az elegáns megoldás...
+float INA226_ConvertToCurrent(float shunt, uint16_t reg_value)
+{
+  float result = 0;
+  int16_t signed_reg_value = (int16_t)reg_value;
+  result = signed_reg_value * 0.0000025F;
+  result = result / shunt;
+  return result;
+}
+
+
+
+//Bits:15bit
+//LSB:1.25mV
+//FS: 40.96(0x7FFF)
+float INA226_ConvertToVoltage(uint16_t reg_value)
+{
+  return reg_value * 0.00125;
+}
+
+
+
+
+
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/

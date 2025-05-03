@@ -35,7 +35,6 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
-
 uint8_t PCA9536_Write(I2C_HandleTypeDef *i2c, uint8_t devAddress, uint8_t command, uint8_t dataOut);
 
 #endif /* PCA9536_H_ */

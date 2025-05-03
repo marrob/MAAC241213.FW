@@ -186,10 +186,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
     /**TIM2 GPIO Configuration
     PA1     ------> TIM2_CH2
     */
-    GPIO_InitStruct.Pin = DISP_PWM_Pin;
+    GPIO_InitStruct.Pin = BLIGHT_PWM_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DISP_PWM_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(BLIGHT_PWM_GPIO_Port, &GPIO_InitStruct);
 
     /* USER CODE BEGIN TIM2_MspPostInit 1 */
 

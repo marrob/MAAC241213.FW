@@ -35,9 +35,6 @@ extern Device_t Device;
  * OCXO3 -> 25MHz
  * OCXO2 -> 20MHz
  * OCXO1 -> 24MHz
- *
- *
- *
  */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -45,7 +42,9 @@ inline static bool Get_OCXO1_Lock(void);
 inline static bool Get_OCXO2_Lock(void);
 inline static bool Get_OCXO3_Lock(void);
 inline static bool Get_Lock_External(void);
-void TriClock_PowerTask(void);
+
+//void TriClock_PowerTask(void);
+
 /* Private user code ---------------------------------------------------------*/
 
 
@@ -58,23 +57,13 @@ void TriClock_Init(I2C_HandleTypeDef *i2ch)
   MCP3421_NonBlocking_Start(MCP3421_PGA_1x | MCP3421_RES_18);
   HAL_Delay(5);
 
-//  while(true)
-  {
-    //--- Port Expander ---
+  //--- Port Expander ---
+  PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_CONFIG, 0x00); //every ports are output
+  PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, 0x00); //every ports are off
+  PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON ); //LED...
+  //--- Minden OCXO bekapcsol ---
+  PCA9536_Write(_i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON | PCA_OCXO1_ON | PCA_OCXO2_ON | PCA_OCXO3_ON);
 
-    PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_CONFIG, 0x00); //every ports are output
-    //HAL_Delay(5);
-
-    PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, 0x00); //every ports are off
-    //HAL_Delay(5);
-
-    PCA9536_Write(i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON ); //every port are output
-   //HAL_Delay(5);
-  }
-
-  Device.TriClock.OCXO3.WarmUpMs = 0;
-  Device.TriClock.OCXO2.WarmUpMs = 0;
-  Device.TriClock.OCXO1.WarmUpMs = 0;
 }
 
 
@@ -91,32 +80,67 @@ void TriClock_Task(void)
 
     //--- OCXO3 ---
     INA226_Read(_i2ch, OCXO3_INA226_ADDRESS, INA226_REG_DIEID, &Device.TriClock.OCXO3.INA226_DIE_ID);
-    INA226_Read(_i2ch, OCXO3_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO3.Voltage);
-    INA226_Read(_i2ch, OCXO3_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO3.Current);
-    TMP100_Read(_i2ch, OCXO3_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO3.Temperature);
+
+    INA226_Read(_i2ch, OCXO3_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO3.LSB_Voltage);
+    Device.TriClock.OCXO1.Voltage = INA226_ConvertToVoltage(Device.TriClock.OCXO1.LSB_Voltage);
+
+    INA226_Read(_i2ch, OCXO3_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO3.LSB_Current);
+    Device.TriClock.OCXO3.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.OCXO3.LSB_Current);
+
+    TMP100_Read(_i2ch, OCXO3_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO3.LSB_Temperature);
+    Device.TriClock.OCXO3.Temperature = TMP100_ConvertToCelsius(Device.TriClock.OCXO3.LSB_Temperature);
+
     Device.TriClock.OCXO3.IsLocked = Get_OCXO3_Lock();
 
 
     //--- OCXO2 ---
     INA226_Read(_i2ch, OCXO2_INA226_ADDRESS, INA226_REG_DIEID, &Device.TriClock.OCXO2.INA226_DIE_ID);
-    INA226_Read(_i2ch, OCXO2_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO2.Voltage);
-    INA226_Read(_i2ch, OCXO2_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO2.Current);
-    TMP100_Read(_i2ch, OCXO2_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO2.Temperature);
+
+    INA226_Read(_i2ch, OCXO2_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO2.LSB_Voltage);
+    Device.TriClock.OCXO2.Voltage = INA226_ConvertToVoltage(Device.TriClock.OCXO2.LSB_Voltage);
+
+    INA226_Read(_i2ch, OCXO2_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO2.LSB_Current);
+    Device.TriClock.OCXO2.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.OCXO2.LSB_Current);
+
+    TMP100_Read(_i2ch, OCXO2_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO2.LSB_Temperature);
+    Device.TriClock.OCXO2.Temperature = TMP100_ConvertToCelsius(Device.TriClock.OCXO2.LSB_Temperature);
+
     Device.TriClock.OCXO2.IsLocked = Get_OCXO2_Lock();
 
     //--- OCXO1 ---
     INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_DIEID, &Device.TriClock.OCXO1.INA226_DIE_ID);
-    INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO1.Voltage);
-    INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO1.Current);
-    TMP100_Read(_i2ch, OCXO1_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO1.Temperature);
+    INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO1.LSB_Voltage);
+    Device.TriClock.OCXO3.Voltage = INA226_ConvertToVoltage(Device.TriClock.OCXO1.LSB_Voltage);
+
+    INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.OCXO1.LSB_Current);
+    Device.TriClock.OCXO1.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.OCXO1.LSB_Current);
+
+    TMP100_Read(_i2ch, OCXO1_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.OCXO1.LSB_Temperature);
+    Device.TriClock.OCXO1.Temperature = TMP100_ConvertToCelsius(Device.TriClock.OCXO1.LSB_Temperature);
+
     Device.TriClock.OCXO1.IsLocked = Get_OCXO1_Lock();
-
   }
+}
 
-  TriClock_PowerTask();
+inline static bool Get_OCXO1_Lock(void){
+  return HAL_GPIO_ReadPin(OCXO1_LOCK_N_GPIO_Port, OCXO1_LOCK_N_Pin ) == GPIO_PIN_RESET;
 }
 
 
+inline static bool Get_OCXO2_Lock(void){
+  return HAL_GPIO_ReadPin(OCXO2_LOCK_N_GPIO_Port, OCXO2_LOCK_N_Pin ) == GPIO_PIN_RESET;
+}
+
+inline static bool Get_OCXO3_Lock(void){
+  return HAL_GPIO_ReadPin(OCXO3_LOCK_N_GPIO_Port, OCXO3_LOCK_N_Pin ) == GPIO_PIN_RESET;
+}
+
+inline static bool Get_Lock_External(void){
+  return HAL_GPIO_ReadPin(LOCK_EXT_N_GPIO_Port, LOCK_EXT_N_Pin ) == GPIO_PIN_RESET;
+}
+
+
+#ifdef _OBSOLETE
 void TriClock_PowerTask(void)
 {
 
@@ -253,25 +277,7 @@ void TriClock_PowerTask(void)
 
 }
 
-
-
-
-inline static bool Get_OCXO1_Lock(void){
-  return HAL_GPIO_ReadPin(OCXO1_LOCK_N_GPIO_Port, OCXO1_LOCK_N_Pin ) == GPIO_PIN_RESET;
-}
-
-
-inline static bool Get_OCXO2_Lock(void){
-  return HAL_GPIO_ReadPin(OCXO2_LOCK_N_GPIO_Port, OCXO2_LOCK_N_Pin ) == GPIO_PIN_RESET;
-}
-
-inline static bool Get_OCXO3_Lock(void){
-  return HAL_GPIO_ReadPin(OCXO3_LOCK_N_GPIO_Port, OCXO3_LOCK_N_Pin ) == GPIO_PIN_RESET;
-}
-
-inline static bool Get_Lock_External(void){
-  return HAL_GPIO_ReadPin(LOCK_EXT_N_GPIO_Port, LOCK_EXT_N_Pin ) == GPIO_PIN_RESET;
-}
+#endif //OBSOLETE
 
 
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/
