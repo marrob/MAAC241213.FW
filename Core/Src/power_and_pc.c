@@ -19,96 +19,94 @@ extern Device_t Device;
 /* Private function prototypes -----------------------------------------------*/
 
 inline static void PowerOn_CLK(void);
-inline static bool DoesRun_CLK(void);
-
 inline static void PowerOn_ETH(void);
-inline static bool DoesRun_ETH(void);
-
 inline static void PowerOn_P20(void);
-inline static bool DoesRun_P20(void);
-
 inline static void PowerOn_P24(void);
-inline static bool DoesRun_P24(void);
-
 inline static void PowerOn_NVME(void);
-inline static bool DoesRun_NVME(void);
 
-static uint16_t StatusRead(void);
-
-
-
+bool PcPsuIsOn(void);
 
 /* Private user code ---------------------------------------------------------*/
-
-
 void PwrSeq_Init(void)
 {
 
   //--- Minden tápegység megy ---
-  HAL_Delay(100);
+  HAL_Delay(250);
   PowerOn_ETH();
-  HAL_Delay(100);
+  HAL_Delay(250);
   PowerOn_P20();
-  HAL_Delay(100);
+  HAL_Delay(250);
   PowerOn_P24();
-  HAL_Delay(100);
+  HAL_Delay(250);
   PowerOn_CLK();
-  HAL_Delay(100);
+  HAL_Delay(250);
   PowerOn_NVME();
-  HAL_Delay(100);
+  HAL_Delay(250);
 
-
-  //--- Az PC Start Interlock relé mindig meg van húzva ---
-  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_SET);
-
-  Device.PC.State.Pre = false;
-  Device.PC.State.Curr = false;
+  Device.PC.PsuState = false;
+  Device.PC.PsuStatePre = false;
   Device.PC.BacklightIsOn = false;
-
 }
-
-
 
 void PwrSeq_Task(void)
 {
   static uint32_t timestamp;
 
+  Device.PC.PsuState =  PcPsuIsOn();
 
-  if(HAL_GetTick() - timestamp > 1000)
+  if(Device.PC.PsuStatePre != Device.PC.PsuState)
   {
-    timestamp = HAL_GetTick();
-    Device.PowerStatus = StatusRead();
-  }
-
-  static uint32_t pcStartTimestamp;
-  Device.PC.State.Curr =  HAL_GPIO_ReadPin(DC_ON_N_GPIO_Port, DC_ON_N_Pin) == GPIO_PIN_RESET;
-
-  if(Device.PC.State.Pre != Device.PC.State.Curr)
-  {
-    if(Device.PC.State.Curr == true )
+    if(Device.PC.PsuState == true )
     {
       //Elintult a PC és várjuk, hogy a PC UART-on bekapcsolja a kijelzőt
-      pcStartTimestamp = HAL_GetTick();
+      timestamp = HAL_GetTick();
+      Device.Diag.PcPsuOnCnt ++;
     }
-
-    if(Device.PC.State.Curr == false)
+    else
     { //Leállt a PC
-      pcStartTimestamp = 0;
+      timestamp = 0;
+      Device.Diag.PcPsuOffCnt ++;
+      //kikapcsolja a kijelzőt, talán könnyebb debugolni
+      Device.PC.BacklightIsOn = false;
+      Device.PC.BacklightIntensity = 0;
     }
-
-    Device.PC.State.Pre =  Device.PC.State.Curr;
+    Device.PC.PsuStatePre =  Device.PC.PsuState;
   }
 
-  if(Device.PC.State.Curr == true)
+  if(Device.PC.PsuState == true)
   {
-    if(HAL_GetTick() - pcStartTimestamp > 10000)
+    if(HAL_GetTick() - timestamp > 10000)
     {
        if(Device.PC.BacklightIsOn == false)
        {
-        //ha fut a PC és letet az idő, és nincs bekacsolva a kijelző, akkor bekapcsolja a kijelzőt
-         Backlight_On();
+         //ha: fut a PC és letet az idő és nincs bekacsolva a kijelző -> akkor bekapcsolja a kijelzőt
+         Device.PC.BacklightIsOn = true;
+         Device.PC.BacklightIntensity = 50;
+         Device.Diag.ForceBacklightOnCnt++;
+       }
+       else
+       {//lejárt a timeout, de a PC már bekacsolta a kijelzőt
+         //ideális esetben itt ciklik
+         timestamp = 0;
        }
     }
+  }
+
+  if(Device.PC.BacklightIsOnPre != Device.PC.BacklightIsOn)
+  {
+    if(Device.PC.BacklightIsOn)
+      Backlight_On();
+    else
+      Backlight_Off();
+    Device.PC.BacklightIsOnPre = Device.PC.BacklightIsOn;
+  }
+
+  //--- A fényerő modositasanak lehetosege mindig el ---
+  if(Device.PC.BacklightIntensityPre != Device.PC.BacklightIntensity)
+  {
+    Backlight_SetDuty(Device.PC.BacklightIntensity);
+    Device.Diag.BacklightChangedCnt++;
+    Device.PC.BacklightIntensityPre = Device.PC.BacklightIntensity;
   }
 }
 
@@ -156,20 +154,14 @@ inline static bool DoesRun_NVME(void){
 static TIM_HandleTypeDef *_htim;
 void Backlight_On(void)
 {
-  HAL_GPIO_WritePin(BLIGHT_EN_GPIO_Port, BLIGHT_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(BLIGHT_RLY_GPIO_Port, BLIGHT_RLY_Pin, GPIO_PIN_SET);
 }
 
 void Backlight_Off(void)
 {
-  HAL_GPIO_WritePin(BLIGHT_EN_GPIO_Port, BLIGHT_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(BLIGHT_RLY_GPIO_Port, BLIGHT_RLY_Pin, GPIO_PIN_RESET);
 }
 
-void Backlight_Init(TIM_HandleTypeDef *htim)
-{
-  HAL_TIM_PWM_Start(htim,TIM_CHANNEL_2);
-  Backlight_SetDuty(50);
-  _htim = htim;
-}
 
 /*
  * APB2 f: 72MHz
@@ -177,55 +169,35 @@ void Backlight_Init(TIM_HandleTypeDef *htim)
  * ARR: 480
  * fpwm: 2500Hz
  *
+ * - a kijelző invertált PWM-et vár, 0% PWM-hez tartozik a maximális fényerő
+ * - a CH Polarity High -> Low legyen, igy init után 3.3V-van a PWM-en
+ * - és bekapcsolás után azonnal inicilaizálja a kijelzőt mert csak akkor áll be az default értéke a portnak
  */
+void Backlight_Init(TIM_HandleTypeDef *htim, uint8_t percent)
+{
+  _htim = htim;
+  HAL_TIM_PWM_Start(htim,TIM_CHANNEL_2);
+  Backlight_SetDuty(percent);
+}
+
 void Backlight_SetDuty(uint8_t percent)
 {
-  Device.PC.BacklightPercent = percent;
-  percent = 100 - percent;
   uint32_t arr = __HAL_TIM_GET_AUTORELOAD(_htim);
   uint32_t ccr = (arr * percent) / 100;
   __HAL_TIM_SET_COMPARE(_htim,TIM_CHANNEL_2, ccr);
-
 }
 
 uint8_t Backlight_GetDuty(void)
 {
-  return Device.PC.BacklightPercent;
+  return Device.PC.BacklightIntensity;
 }
 
-
-static uint16_t StatusRead(void)
+//--- PC ---
+bool PcPsuIsOn(void)
 {
-  uint16_t status = 0;
-
-  if(DoesRun_CLK())
-    status |= PWR_CLK_RUN;
-  else
-    status &= ~(PWR_CLK_RUN & 0x7FFF);
-
-  if(DoesRun_ETH())
-    status |= PWR_ETH_RUN;
-  else
-    status &= ~(PWR_ETH_RUN & 0x7FFF);
-
-  if(DoesRun_P20())
-    status |= PWR_P20_RUN;
-  else
-    status &= ~(PWR_P20_RUN & 0x7FFF);
-
-  if(DoesRun_P24())
-    status |= PWR_P24_RUN;
-  else
-    status &= ~(PWR_P24_RUN & 0x7FFF);
-
-  if(DoesRun_NVME())
-    status |= PWR_NVME_RUN;
-  else
-    status &= ~(PWR_NVME_RUN & 0x7FFF);
-
-  return status;
+  bool on = HAL_GPIO_ReadPin(DC_ON_N_GPIO_Port, DC_ON_N_Pin) == GPIO_PIN_RESET;
+  return on;
 }
-
 
 
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/

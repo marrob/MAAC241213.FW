@@ -44,7 +44,6 @@ static void Parser(char *request, char *response)
 {
   char cmd[UART_CMD_LENGTH];
   char arg1[UART_ARG_LENGTH];
-  //char arg2[UART_ARG_LENGTH];
 
   sscanf(request, "%s", cmd);
 
@@ -72,37 +71,29 @@ static void Parser(char *request, char *response)
   else if(!strcmp(cmd,"UPTIME?")){
      sprintf(response, "%08lX", Device.Diag.UpTimeSec);
   }
-  else if(!strcmp(cmd,"DI?")){
-     sprintf(response, "%08hX", Device.DI);
-  }
-  else if(!strcmp(cmd,"DO?")){
-     sprintf(response, "%08hX", Device.DO);
-  }
   else if(!strcmp(cmd,"UE?")){
     sprintf(response, "%08lX", Device.Diag.UartErrorCnt);
-  }
-  else if(!strcmp(cmd,"DO")){
-    sscanf(request, "%s %s",cmd, arg1);
-    Device.DO = strtol(arg1, NULL, 16);
-    strcpy(response, "OK");
   }
   else if(!strcmp(cmd, "BLIGHT?")){
     sprintf(response, "%d",Device.PC.BacklightIsOn);
   }
   else if(!strcmp(cmd, "BLIGHT:ON")){
-   // Display_On();
+    Device.PC.BacklightIsOn = true;
     strcpy(response, "OK");
   }
   else if(!strcmp(cmd, "BLIGHT:OFF")){
-   // Display_Off();
-    strcpy(response, "OK");
-  }
-  else if(!strcmp(cmd, "BLIGHT:PWM")){
-    uint8_t percent = strtol(arg1, NULL, 10);
-    Backlight_SetDuty(percent);
+    Device.PC.BacklightIsOn = false;
     strcpy(response, "OK");
   }
 
+  else if(!strcmp(cmd, "BLIGHT:PWM")){
+    sscanf(request, "%s %s", cmd, arg1);
+    Device.PC.BacklightIntensity = strtol(arg1, NULL, 10);
+    strcpy(response, "OK");
+  }
+  else if(!strcmp(cmd, "BLIGHT:PWM?")){
+    sprintf(response, "%d", Device.PC.BacklightIntensity);
+  }
   else if(!strcmp(cmd, "TRICLOCK:OCXO1:STAT?")){
     sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
         Device.TriClock.OCXO1.Voltage,

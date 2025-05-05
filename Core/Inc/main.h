@@ -39,17 +39,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-typedef enum _PwrSeqStatus_e
-{
-  PWR_UNKNOWN = 0x0000,
-  PWR_CLK_RUN = 0x8001,
-  PWR_ETH_RUN = 0x8002,
-  PWR_P20_RUN = 0x8004,
-  PWR_P24_RUN = 0x8008,
-  PWR_NVME_RUN = 0x8010,
-}PowerStatus_t;
-
-
 typedef struct REFOXCO_st
 {
   float Voltage; //csak az I2C-s tudja
@@ -76,9 +65,6 @@ typedef struct OCXO_st
 
 typedef struct _Devic_t
 {
-  uint8_t DO;
-  uint8_t DI;
-
   struct _Diag
   {
     uint32_t LcdTimeout;
@@ -86,6 +72,10 @@ typedef struct _Devic_t
     uint32_t UartErrorCnt;
     uint32_t UpTimeSec;
     uint32_t TransactionCnt;
+    uint32_t BacklightChangedCnt;
+    uint32_t PcPsuOnCnt;
+    uint32_t PcPsuOffCnt;
+    uint32_t ForceBacklightOnCnt;
   }Diag;
 
   struct _Triclock
@@ -98,19 +88,15 @@ typedef struct _Devic_t
 
   }TriClock;
 
-  PowerStatus_t PowerStatus;
 
   struct _PC_st
   {
-
     bool BacklightIsOn;
-    uint8_t BacklightPercent;
-
-    struct
-    {
-      bool Pre;
-      bool Curr;
-    }State;
+    bool BacklightIsOnPre;
+    uint8_t BacklightIntensity;
+    uint8_t BacklightIntensityPre;
+    bool PsuStatePre;
+    bool PsuState;
 
   }PC;
 
@@ -130,7 +116,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250422_1204"
+#define DEVICE_FW               "250505_2132"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)
@@ -184,7 +170,7 @@ void PwrSeq_Task(void);
 //--- Backlight ---
 void Backlight_On(void);
 void Backlight_Off(void);
-void Backlight_Init(TIM_HandleTypeDef *htim);
+void Backlight_Init(TIM_HandleTypeDef *htim, uint8_t percent);
 void Backlight_SetDuty(uint8_t percent);
 uint8_t Backlight_GetDuty(void);
 
@@ -226,8 +212,8 @@ void TriClock_Task(void);
 #define REF_EXT_N_GPIO_Port GPIOB
 #define ADC_SYNC_Pin GPIO_PIN_8
 #define ADC_SYNC_GPIO_Port GPIOC
-#define PC_INTERLOCK_Pin GPIO_PIN_9
-#define PC_INTERLOCK_GPIO_Port GPIOC
+#define BLIGHT_RLY_Pin GPIO_PIN_9
+#define BLIGHT_RLY_GPIO_Port GPIOC
 #define STAT_LED_Pin GPIO_PIN_8
 #define STAT_LED_GPIO_Port GPIOA
 

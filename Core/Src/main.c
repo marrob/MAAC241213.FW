@@ -15,6 +15,8 @@
   *
   ******************************************************************************
   *
+  *- Az orak tapjai az eszkoz aram ala helyezese utan fixen allandoan mennek.
+  *- A PC be kikapcsolast a PCPSU vezerli atx szabvany szerint. Ezzel a FW-nek nem kell foglalkoznia.
   *
   * OCXO3 -> 25MHz
   * OCXO2 -> 20MHz
@@ -31,6 +33,17 @@
   * OCXO1 Current   |nincs (0A)          |van (0..12V)                    |
   * OCXO1 IsLocked  |van (Legacy Locks)  |van                             |
   *
+  *
+  *
+  *- Bekapcsoáls után a Baklight relé nincs meghzuva
+  *- Bekpcsolás után a PWM vonalon 3.3V DC kell hogy legyen (ez a legsötétebb háttér világitas)
+  *
+  *- Elsődleges cél: A felhasználó ne lássa a boot képernyőt, viszont ha probléma van, legyen lehetőség debuggolásra.
+  *- Bekapcsolási folyamat:
+  *   - Ha a felhasználó megnyomja a POWER BUTTON-t, a PC tápja (PC PSU) a DC_ON vonalon jelez magas szinttel a kontrollernek.
+  *   - A kontroller ekkor egy időzítést indít.
+  *   - Ha egy meghatározott időn belül a PC a soros porton nem jelzi, hogy minden rendben, a kontroller bekapcsolja a kijelzőt a debughoz.
+  *-
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -94,6 +107,8 @@ void LiveLedOff(void);
 //--- Tools ---
 void UpTimeTask(void);
 
+void DrawDisplay(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -140,50 +155,19 @@ int main(void)
   printf(VT100_CURSORHOME);
   printf(VT100_ATTR_RESET);
 
+  //--- Backlight Init ---
+  Backlight_Init(&htim2, 0);
+
   //--- Display ---
   DisplayInit(&hi2c2, SSD1306_I2C_DEV_ADDRESS);
   DisplayClear();
   DisplayUpdate();
-
-  //Top
-  DisplayDrawLine(0, 0, SSD1306_WIDTH - 1, 0, SSD1306_WHITE);
-  DisplayUpdate();
-
-  //Left
-  DisplayDrawLine(0, 0, 0, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-  DisplayUpdate();
-
-  //Bottom
-  DisplayDrawLine(0, SSD1306_HEIGHT - 1, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-  DisplayUpdate();
-
-  //Right
-  DisplayDrawLine(SSD1306_WIDTH - 1, 0, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-  DisplayUpdate();
-
-  DisplaySetCursor(0, 4);
-  DisplayDrawString("Hello World", &GfxFont7x8, SSD1306_WHITE );
-  DisplayUpdate();
-
-  DisplayClear();
-  DisplayUpdate();
-
-  DisplaySetCursor(5, 5);
-  DisplayDrawString("0123456789", &GfxFont8x12, SSD1306_WHITE );
-  DisplayUpdate();
-
-  DisplayDrawLine(0, 0, SSD1306_WIDTH - 1, 0, SSD1306_WHITE);
-  DisplayDrawLine(0, 0, 0, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-  DisplayDrawLine(0, SSD1306_HEIGHT - 1, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-  DisplayDrawLine(SSD1306_WIDTH - 1, 0, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-
 
   //--- LiveLed ---
   hLiveLed.LedOffFnPtr = &LiveLedOff;
   hLiveLed.LedOnFnPtr = &LiveLedOn;
   hLiveLed.HalfPeriodTimeMs = 500;
   LiveLedInit(&hLiveLed);
-
 
   //--- Communication ---
   UartCom_Init(&huart1, &hdma_usart1_rx);
@@ -194,40 +178,17 @@ int main(void)
   //--- TriClock ---
   TriClock_Init(&hi2c2);
 
-
-  Device.TriClock.OCXO1.Voltage = 1;
-  Device.TriClock.OCXO1.Current = 1.1;
-  Device.TriClock.OCXO1.Temperature = 1.2;
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-    static uint32_t timestamp;
-    char string[50];
-
-    if(HAL_GetTick() - timestamp > 250)
+    static int32_t timestamp;
+    if(HAL_GetTick() - timestamp > 100)
     {
-      DisplayClear();
-
       timestamp = HAL_GetTick();
-      sprintf(string,"Uptime:%lu\nTrans:%lu",
-          Device.Diag.UpTimeSec,
-          Device.Diag.TransactionCnt);
-
-      DisplaySetCursor(25, 8);
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE );
-
-      DisplayDrawLine(0, 0, SSD1306_WIDTH - 1, 0, SSD1306_WHITE);
-      DisplayDrawLine(0, 0, 0, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-      DisplayDrawLine(0, SSD1306_HEIGHT - 1, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-      DisplayDrawLine(SSD1306_WIDTH - 1, 0, SSD1306_WIDTH - 1, SSD1306_HEIGHT - 1, SSD1306_WHITE);
-
-      DisplayUpdate();
+      DrawDisplay();
     }
 
     LiveLedTask(&hLiveLed);
@@ -243,6 +204,9 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+
+
+
 
 /**
   * @brief System Clock Configuration
@@ -353,7 +317,7 @@ static void MX_TIM2_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
@@ -466,15 +430,15 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, CLK_EN_Pin|ETH_EN_Pin|P20_EN_Pin|P24_EN_Pin
-                          |NVME_EN_Pin|ADC_SYNC_Pin|PC_INTERLOCK_Pin, GPIO_PIN_RESET);
+                          |NVME_EN_Pin|ADC_SYNC_Pin|BLIGHT_RLY_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, BLIGHT_EN_Pin|LIVE_LED_Pin|STAT_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : CLK_EN_Pin ETH_EN_Pin P20_EN_Pin P24_EN_Pin
-                           NVME_EN_Pin ADC_SYNC_Pin PC_INTERLOCK_Pin */
+                           NVME_EN_Pin ADC_SYNC_Pin BLIGHT_RLY_Pin */
   GPIO_InitStruct.Pin = CLK_EN_Pin|ETH_EN_Pin|P20_EN_Pin|P24_EN_Pin
-                          |NVME_EN_Pin|ADC_SYNC_Pin|PC_INTERLOCK_Pin;
+                          |NVME_EN_Pin|ADC_SYNC_Pin|BLIGHT_RLY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -539,6 +503,146 @@ int _write(int file, char *ptr, int len)
     ITM_SendChar((*ptr++));
   return len;
 }
+
+enum Disp_e
+{
+  DISP_NONE,
+  DISP_VERSION,
+  DISP_OCXO1,
+  DISP_OCXO2,
+  DISP_OCXO3,
+  DISP_REF,
+  DISP_PC,
+  DISP_LIVE,
+};
+
+#define DISP_INTER_DELAY_MS 4000
+
+void DrawDisplay(void)
+{
+  static int32_t timestamp;
+  static enum Disp_e dispPre, dispCurr, dispNext;
+  static char string[120];
+  DisplayClear();
+  switch(dispCurr)
+  {
+    case DISP_NONE:{
+      dispNext = DISP_VERSION;
+      break;
+    }
+    case DISP_VERSION:{
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      /*0123456789012345*/
+      DisplaySetCursor(0, 0);
+      DisplayDrawString("   CORE AUDIO   ", &GfxFont7x8, SSD1306_WHITE );
+      DisplaySetCursor(0, 8);
+      DisplayDrawString("      AAC       ", &GfxFont7x8, SSD1306_WHITE );
+      DisplaySetCursor(0, 16);
+      DisplayDrawString(DEVICE_FW, &GfxFont7x8, SSD1306_WHITE );
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_OCXO1;
+      break;
+    }
+    case DISP_OCXO1:{
+
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+      sprintf(string,"OCXO1\nU:%05.2fV\nI:%.3fmA\nt:%05.02fC-%s",
+          Device.TriClock.OCXO1.Voltage,
+          Device.TriClock.OCXO1.Current,
+          Device.TriClock.OCXO1.Temperature,
+          Device.TriClock.OCXO1.IsLocked?"LOCK":"UNLOCK");
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE );
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_OCXO2;
+      break;
+    }
+
+    case DISP_OCXO2:{
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+      sprintf(string,"OCXO2\nU:%05.2fV\nI:%.3fmA\nt:%05.02fC-%s",
+          Device.TriClock.OCXO2.Voltage,
+          Device.TriClock.OCXO2.Current,
+          Device.TriClock.OCXO2.Temperature,
+          Device.TriClock.OCXO2.IsLocked?"LOCK":"UNLOCK");
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE );
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_OCXO3;
+      break;
+    }
+
+    case DISP_OCXO3:
+    {
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+      sprintf(string,"OCXO3\nU:%05.2fV\nI:%.3fmA\nt:%05.02fC-%s",
+          Device.TriClock.OCXO3.Voltage,
+          Device.TriClock.OCXO3.Current,
+          Device.TriClock.OCXO3.Temperature,
+          Device.TriClock.OCXO3.IsLocked?"LOCK":"UNLOCK");
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_REF;
+      break;
+    }
+
+    case DISP_REF:
+    {
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+      sprintf(string,"REF\nU:%05.2fV\nI:%.3fmA\nt:%05.02fC-%s",
+          Device.TriClock.REFOCXO.Voltage,
+          Device.TriClock.REFOCXO.Current,
+          Device.TriClock.REFOCXO.Temperature,
+          Device.TriClock.REFOCXO.ExtRef?"EXT":"INT");
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_PC;
+      break;
+    }
+
+    case DISP_PC:
+    {
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+      sprintf(string,"PC PSU:%s\nBK:%s INTE:%02d\nON CNT:%ld",
+          Device.PC.PsuState?"ON":"OFF",
+          Device.PC.BacklightIsOn?"ON":"OFF",
+          Device.PC.BacklightIntensity,
+          Device.Diag.PcPsuOnCnt);
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_LIVE;
+      break;
+    }
+
+    case DISP_LIVE:{
+      if(dispPre != dispCurr)
+        timestamp = HAL_GetTick();
+      DisplaySetCursor(0, 0);
+                       /*0123456789012345*/
+      DisplayDrawString("     UPTIME     ", &GfxFont7x8, SSD1306_WHITE);
+      DisplaySetCursor(0, 8);
+      sprintf(string,"%ld", Device.Diag.UpTimeSec);
+      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
+        dispNext = DISP_VERSION;
+      break;
+    }
+  }
+
+  dispPre = dispCurr;
+  dispCurr = dispNext;
+  DisplayUpdate();
+}
+
 
 /* USER CODE END 4 */
 

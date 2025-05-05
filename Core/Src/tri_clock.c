@@ -21,21 +21,10 @@
 I2C_HandleTypeDef *_i2ch;
 extern Device_t Device;
 
-
 #define PCA_OCXO3_ON  PCA9536_O0
 #define PCA_OCXO2_ON  PCA9536_O1
 #define PCA_OCXO1_ON  PCA9536_O2
 #define PCA_LED_ON    PCA9536_O3
-
-
-#define INTER_STATE_DEALY_MS 3000
-
-
-/*
- * OCXO3 -> 25MHz
- * OCXO2 -> 20MHz
- * OCXO1 -> 24MHz
- */
 
 /* Private function prototypes -----------------------------------------------*/
 inline static bool Get_OCXO1_Lock(void);
@@ -43,10 +32,7 @@ inline static bool Get_OCXO2_Lock(void);
 inline static bool Get_OCXO3_Lock(void);
 inline static bool Get_External_Reference(void);
 
-//void TriClock_PowerTask(void);
-
 /* Private user code ---------------------------------------------------------*/
-
 
 void TriClock_Init(I2C_HandleTypeDef *i2ch)
 {
@@ -66,10 +52,8 @@ void TriClock_Init(I2C_HandleTypeDef *i2ch)
 
 }
 
-
 void TriClock_Task(void)
 {
-
   static uint32_t timestamp;
 
   if(HAL_GetTick() -  timestamp > 1000)
@@ -138,9 +122,9 @@ void TriClock_Task(void)
     Device.TriClock.REFOCXO.ExtRef = Get_External_Reference();
 
     //--- Legacy Locks  ---
-    Device.TriClock.LegacyLock3 = Get_OCXO3_Lock();
-    Device.TriClock.LegacyLock2 = Get_OCXO2_Lock();
-    Device.TriClock.LegacyLock1 = Get_OCXO1_Lock();
+    Device.TriClock.LegacyIsLocked3 = Get_OCXO3_Lock();
+    Device.TriClock.LegacyIsLocked2 = Get_OCXO2_Lock();
+    Device.TriClock.LegacyIsLocked1 = Get_OCXO1_Lock();
   }
 }
 
@@ -160,181 +144,5 @@ inline static bool Get_OCXO3_Lock(void){
 inline static bool Get_External_Reference(void){
   return HAL_GPIO_ReadPin(REF_EXT_N_GPIO_Port, REF_EXT_N_Pin ) == GPIO_PIN_RESET;
 }
-
-
-#ifdef _OBSOLETE
-
-
-struct
-{
-  TriClkStates_t Next;
-  TriClkStates_t Curr;
-  TriClkStates_t Pre;
-}State;
-
-typedef enum _TriClkStates_e
-{
-  STRI_START,                   //0
-  STRI_WAIT,                    //1
-  STRI_IDLE,                    //2
-  STRI_OCXO1_WARM,              //3
-  STRI_OCXO1_WARM_CPLT,         //4
-  STRI_OCXO2_WARM,              //5
-  STRI_OCXO2_WARM_CPLT,         //6
-  STRI_OCXO3_WARM,              //7
-  STRI_OCXO3_WARM_CPLT,         //8
-  STRI_WARM_CPLT,                //9
-
-}TriClkStates_t;
-
-
-//--- Ha nincs felfütve akkor, nem indulhat a PC ---
-if(Device.TriClock.State.Curr == STRI_WARM_CPLT)
-{
-  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_SET);
-}
-else
-{
-  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_RESET);
-}
-
-void TriClock_PowerTask(void)
-{
-
-  static uint32_t timestamp;
-
-  switch(Device.TriClock.State.Curr)
-  {
-
-    case STRI_START:
-    {
-      Device.TriClock.State.Next = STRI_WAIT;
-      timestamp = HAL_GetTick();
-      break;
-    }
-
-    case STRI_WAIT:
-    {
-      if((HAL_GetTick() - timestamp) > INTER_STATE_DEALY_MS )
-      {
-        Device.TriClock.State.Next = STRI_IDLE;
-        timestamp = HAL_GetTick();
-      }
-      break;
-    }
-
-    case STRI_IDLE:
-    {
-      Device.TriClock.State.Next = STRI_OCXO1_WARM;
-    }
-
-    //--- OCXO1 ---
-    case STRI_OCXO1_WARM:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        Device.TriClock.OCXO1.WarmUpMs = 0;
-        timestamp = HAL_GetTick();
-        PCA9536_Write(_i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON | PCA_OCXO1_ON);
-      }
-
-      if(Device.TriClock.OCXO1.IsLocked)
-      {
-        Device.TriClock.State.Next = STRI_OCXO1_WARM_CPLT;
-        Device.TriClock.OCXO1.WarmUpMs = HAL_GetTick() - timestamp;
-      }
-      break;
-    }
-
-    case STRI_OCXO1_WARM_CPLT:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        timestamp = HAL_GetTick();
-      }
-
-      if((HAL_GetTick() - timestamp) > INTER_STATE_DEALY_MS )
-      {
-        Device.TriClock.State.Next = STRI_OCXO3_WARM;
-      }
-      break;
-    }
-    // --- OCXO2 ---
-    case STRI_OCXO2_WARM:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        timestamp = HAL_GetTick();
-        Device.TriClock.OCXO2.WarmUpMs = 0;
-        PCA9536_Write(_i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON | PCA_OCXO1_ON | PCA_OCXO2_ON);
-      }
-
-      if(Device.TriClock.OCXO2.IsLocked)
-      {
-        Device.TriClock.State.Next = STRI_OCXO2_WARM_CPLT;
-        Device.TriClock.OCXO2.WarmUpMs = HAL_GetTick() - timestamp;
-      }
-      break;
-    }
-
-    case STRI_OCXO2_WARM_CPLT:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        timestamp = HAL_GetTick();
-      }
-
-      if((HAL_GetTick() - timestamp) > INTER_STATE_DEALY_MS )
-      {
-        Device.TriClock.State.Next = STRI_OCXO3_WARM;
-      }
-      break;
-    }
-
-    // --- OCXO3 ---
-    case STRI_OCXO3_WARM:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        timestamp = HAL_GetTick();
-        Device.TriClock.OCXO3.WarmUpMs = 0;
-        PCA9536_Write(_i2ch, TRICLOCK_PCA9536_ADDRESS, PCA9536_CMD_WRITE, PCA_LED_ON | PCA_OCXO1_ON | PCA_OCXO3_ON);
-      }
-
-      if(Device.TriClock.OCXO3.IsLocked)
-      {
-        Device.TriClock.State.Next = STRI_OCXO3_WARM_CPLT;
-        Device.TriClock.OCXO3.WarmUpMs = HAL_GetTick() - timestamp;
-      }
-      break;
-    }
-
-    case STRI_OCXO3_WARM_CPLT:
-    {
-      if(Device.TriClock.State.Pre != Device.TriClock.State.Curr)
-      {
-        timestamp = HAL_GetTick();
-      }
-
-      if((HAL_GetTick() - timestamp) > INTER_STATE_DEALY_MS )
-      {
-        Device.TriClock.State.Next =  STRI_WARM_CPLT;
-      }
-      break;
-    }
-
-    case STRI_WARM_CPLT:
-    {
-      break;
-    }
-  }
-
-  Device.TriClock.State.Pre = Device.TriClock.State.Curr;
-  Device.TriClock.State.Curr = Device.TriClock.State.Next;
-
-}
-
-#endif //OBSOLETE
-
 
 /************************ (C) COPYRIGHT KonvolucioBt ***********END OF FILE****/
