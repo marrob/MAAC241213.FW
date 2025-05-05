@@ -50,21 +50,17 @@ typedef enum _PwrSeqStatus_e
 }PowerStatus_t;
 
 
-typedef enum _TriClkStates_e
+typedef struct REFOXCO_st
 {
-  STRI_START,                   //0
-  STRI_WAIT,                    //1
-  STRI_IDLE,                    //2
-  STRI_OCXO1_WARM,              //3
-  STRI_OCXO1_WARM_CPLT,         //4
-  STRI_OCXO2_WARM,              //5
-  STRI_OCXO2_WARM_CPLT,         //6
-  STRI_OCXO3_WARM,              //7
-  STRI_OCXO3_WARM_CPLT,         //8
-  STRI_WARM_CPLT,                //9
-
-}TriClkStates_t;
-
+  float Voltage; //csak az I2C-s tudja
+  float Current; //csak az I2C-s tudja
+  uint16_t LSB_Voltage;
+  uint16_t LSB_Current;
+  uint16_t INA226_DIE_ID;  //diag only 0x2260
+  uint32_t LSB_Temperature;
+  float Temperature; // csak a LegacyTriclock-ban van, az I2C-s nem tudja
+  bool ExtRef;
+}REFOCXO_t;
 
 typedef struct OCXO_st
 {
@@ -76,7 +72,6 @@ typedef struct OCXO_st
   uint16_t INA226_DIE_ID;  //diag only 0x2260
   uint16_t LSB_Temperature;
   bool     IsLocked;
-//  uint32_t WarmUpMs;
 }OCXO_t;
 
 typedef struct _Devic_t
@@ -93,17 +88,14 @@ typedef struct _Devic_t
     uint32_t TransactionCnt;
   }Diag;
 
-
   struct _Triclock
   {
-    uint32_t MCP3421_Value;
     OCXO_t OCXO1, OCXO2, OCXO3;
-    struct
-    {
-      TriClkStates_t Next;
-      TriClkStates_t Curr;
-      TriClkStates_t Pre;
-    }State;
+    REFOCXO_t REFOCXO;
+    bool LegacyIsLocked1;
+    bool LegacyIsLocked2;
+    bool LegacyIsLocked3;
+
   }TriClock;
 
   PowerStatus_t PowerStatus;
@@ -167,6 +159,7 @@ typedef struct _Devic_t
 #define OCXO1_INA226_ADDRESS        0x8C  //U370
 #define OCXO1_TMP100_ADDRESS        0x98  //U376
 
+#define REFOCXO_INA226_ADDRESS      0x80  //U109
 
 
 /* USER CODE END EM */
@@ -229,8 +222,8 @@ void TriClock_Task(void);
 #define OCXO1_LOCK_N_GPIO_Port GPIOC
 #define OCXO3_LOCK_N_Pin GPIO_PIN_5
 #define OCXO3_LOCK_N_GPIO_Port GPIOC
-#define LOCK_EXT_N_Pin GPIO_PIN_0
-#define LOCK_EXT_N_GPIO_Port GPIOB
+#define REF_EXT_N_Pin GPIO_PIN_0
+#define REF_EXT_N_GPIO_Port GPIOB
 #define ADC_SYNC_Pin GPIO_PIN_8
 #define ADC_SYNC_GPIO_Port GPIOC
 #define PC_INTERLOCK_Pin GPIO_PIN_9

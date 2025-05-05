@@ -103,26 +103,39 @@ static void Parser(char *request, char *response)
     strcpy(response, "OK");
   }
 
-  else if(!strcmp(cmd, "OCXO1:STAT?")){
+  else if(!strcmp(cmd, "TRICLOCK:OCXO1:STAT?")){
     sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
         Device.TriClock.OCXO1.Voltage,
         Device.TriClock.OCXO1.Current,
         Device.TriClock.OCXO1.Temperature,
         Device.TriClock.OCXO1.IsLocked?'L':'N');
   }
-  else if(!strcmp(cmd, "OCXO2:STAT?")){
+  else if(!strcmp(cmd, "TRICLOCK:OCXO2:STAT?")){
     sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
         Device.TriClock.OCXO2.Voltage,
         Device.TriClock.OCXO2.Current,
         Device.TriClock.OCXO2.Temperature,
         Device.TriClock.OCXO2.IsLocked?'L':'N');
   }
-  else if(!strcmp(cmd, "OCXO3:STAT?")){
+  else if(!strcmp(cmd, "TRICLOCK:OCXO3:STAT?")){
     sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
         Device.TriClock.OCXO3.Voltage,
         Device.TriClock.OCXO3.Current,
         Device.TriClock.OCXO3.Temperature,
         Device.TriClock.OCXO3.IsLocked?'L':'N');
+  }
+  else if(!strcmp(cmd, "TRICLOCK:REFOCXO:STAT?")){
+    sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
+        Device.TriClock.REFOCXO.Voltage,
+        Device.TriClock.REFOCXO.Current,
+        Device.TriClock.REFOCXO.Temperature,
+        Device.TriClock.REFOCXO.ExtRef?'E':'I');
+  }
+  else if(!strcmp(cmd, "TRICLOCK:LEGACY:STAT?")){
+    sprintf(response, "%c;%c;%c",
+        Device.TriClock.LegacyIsLocked1?'L':'N',
+        Device.TriClock.LegacyIsLocked2?'L':'N',
+        Device.TriClock.LegacyIsLocked3?'L':'N');
   }
 
   else{

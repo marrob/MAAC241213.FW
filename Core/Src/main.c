@@ -14,6 +14,23 @@
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
+  *
+  *
+  * OCXO3 -> 25MHz
+  * OCXO2 -> 20MHz
+  * OCXO1 -> 24MHz
+  *
+  *                 |  Legacy Triclock   |          I2C Triclock          |
+  * REFOCXO Temp    |nincs(152.918C ±1%) |van (MAAC kártya méri)          |
+  * REFOCXO ExtRef  |van                 |van                             |
+  * REFOCXO Current |nincs (0A)          |van (0..1A)                     |
+  * REFOCXO Voltage |nincs (0V)          |van (0..12V)                    |
+  *
+  * OCXO1 Temp      |nincs (0C)          |van (0..70)                     |
+  * OCXO1 Voltage   |nincs (0V)          |van (0..1A)                     |
+  * OCXO1 Current   |nincs (0A)          |van (0..12V)                    |
+  * OCXO1 IsLocked  |van (Legacy Locks)  |van                             |
+  *
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -319,9 +336,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 59;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 480;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
@@ -482,11 +499,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LOCK_EXT_N_Pin */
-  GPIO_InitStruct.Pin = LOCK_EXT_N_Pin;
+  /*Configure GPIO pin : REF_EXT_N_Pin */
+  GPIO_InitStruct.Pin = REF_EXT_N_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(LOCK_EXT_N_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(REF_EXT_N_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
   /* USER CODE END MX_GPIO_Init_2 */

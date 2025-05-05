@@ -80,20 +80,6 @@ void PwrSeq_Task(void)
     Device.PowerStatus = StatusRead();
   }
 
-
-
-  //--- Ha nincs felfütve akkor, nem indulhat a PC ---
-  if(Device.TriClock.State.Curr == STRI_WARM_CPLT)
-  {
-    HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_SET);
-  }
-  else
-  {
-    HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_RESET);
-  }
-
-
-
   static uint32_t pcStartTimestamp;
   Device.PC.State.Curr =  HAL_GPIO_ReadPin(DC_ON_N_GPIO_Port, DC_ON_N_Pin) == GPIO_PIN_RESET;
 
@@ -185,6 +171,13 @@ void Backlight_Init(TIM_HandleTypeDef *htim)
   _htim = htim;
 }
 
+/*
+ * APB2 f: 72MHz
+ * Prescaler: 59
+ * ARR: 480
+ * fpwm: 2500Hz
+ *
+ */
 void Backlight_SetDuty(uint8_t percent)
 {
   Device.PC.BacklightPercent = percent;

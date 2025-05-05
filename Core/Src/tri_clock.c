@@ -41,7 +41,7 @@ extern Device_t Device;
 inline static bool Get_OCXO1_Lock(void);
 inline static bool Get_OCXO2_Lock(void);
 inline static bool Get_OCXO3_Lock(void);
-inline static bool Get_Lock_External(void);
+inline static bool Get_External_Reference(void);
 
 //void TriClock_PowerTask(void);
 
@@ -75,7 +75,6 @@ void TriClock_Task(void)
   if(HAL_GetTick() -  timestamp > 1000)
   {
     timestamp = HAL_GetTick();
-    Device.TriClock.MCP3421_Value = MCP3421_NonBlocking_GetVale();
     HAL_Delay(5);
 
     //--- OCXO3 ---
@@ -109,6 +108,7 @@ void TriClock_Task(void)
 
     //--- OCXO1 ---
     INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_DIEID, &Device.TriClock.OCXO1.INA226_DIE_ID);
+
     INA226_Read(_i2ch, OCXO1_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.OCXO1.LSB_Voltage);
     Device.TriClock.OCXO3.Voltage = INA226_ConvertToVoltage(Device.TriClock.OCXO1.LSB_Voltage);
 
@@ -119,6 +119,28 @@ void TriClock_Task(void)
     Device.TriClock.OCXO1.Temperature = TMP100_ConvertToCelsius(Device.TriClock.OCXO1.LSB_Temperature);
 
     Device.TriClock.OCXO1.IsLocked = Get_OCXO1_Lock();
+
+
+    //--- REF OCXO ---
+    INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_DIEID, &Device.TriClock.REFOCXO.INA226_DIE_ID);
+
+    INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Voltage);
+    Device.TriClock.REFOCXO.Voltage = INA226_ConvertToVoltage(Device.TriClock.REFOCXO.LSB_Voltage);
+
+    INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Current);
+    Device.TriClock.REFOCXO.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.REFOCXO.LSB_Current);
+
+
+    Device.TriClock.REFOCXO.LSB_Temperature = MCP3421_NonBlocking_GetVale();
+    float lsb = 2 * (2.048 / 16384);
+    float volts = Device.TriClock.REFOCXO.LSB_Temperature * lsb;
+    Device.TriClock.REFOCXO.Temperature = (-2.3654*volts*volts) + (-78.154*volts) + 153.857;
+    Device.TriClock.REFOCXO.ExtRef = Get_External_Reference();
+
+    //--- Legacy Locks  ---
+    Device.TriClock.LegacyLock3 = Get_OCXO3_Lock();
+    Device.TriClock.LegacyLock2 = Get_OCXO2_Lock();
+    Device.TriClock.LegacyLock1 = Get_OCXO1_Lock();
   }
 }
 
@@ -135,12 +157,47 @@ inline static bool Get_OCXO3_Lock(void){
   return HAL_GPIO_ReadPin(OCXO3_LOCK_N_GPIO_Port, OCXO3_LOCK_N_Pin ) == GPIO_PIN_RESET;
 }
 
-inline static bool Get_Lock_External(void){
-  return HAL_GPIO_ReadPin(LOCK_EXT_N_GPIO_Port, LOCK_EXT_N_Pin ) == GPIO_PIN_RESET;
+inline static bool Get_External_Reference(void){
+  return HAL_GPIO_ReadPin(REF_EXT_N_GPIO_Port, REF_EXT_N_Pin ) == GPIO_PIN_RESET;
 }
 
 
 #ifdef _OBSOLETE
+
+
+struct
+{
+  TriClkStates_t Next;
+  TriClkStates_t Curr;
+  TriClkStates_t Pre;
+}State;
+
+typedef enum _TriClkStates_e
+{
+  STRI_START,                   //0
+  STRI_WAIT,                    //1
+  STRI_IDLE,                    //2
+  STRI_OCXO1_WARM,              //3
+  STRI_OCXO1_WARM_CPLT,         //4
+  STRI_OCXO2_WARM,              //5
+  STRI_OCXO2_WARM_CPLT,         //6
+  STRI_OCXO3_WARM,              //7
+  STRI_OCXO3_WARM_CPLT,         //8
+  STRI_WARM_CPLT,                //9
+
+}TriClkStates_t;
+
+
+//--- Ha nincs felfütve akkor, nem indulhat a PC ---
+if(Device.TriClock.State.Curr == STRI_WARM_CPLT)
+{
+  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_SET);
+}
+else
+{
+  HAL_GPIO_WritePin(PC_INTERLOCK_GPIO_Port, PC_INTERLOCK_Pin, GPIO_PIN_RESET);
+}
+
 void TriClock_PowerTask(void)
 {
 
