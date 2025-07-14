@@ -50,6 +50,7 @@ void PwrSeq_Init(void)
   Device.PC.PsuState = false;
   Device.PC.PsuStatePre = false;
   Device.PC.BacklightIsOn = false;
+  Device.PC.BacklightOnProtectionCompleted = false;
 }
 
 void PwrSeq_Task(void)
@@ -73,6 +74,7 @@ void PwrSeq_Task(void)
       //kikapcsolja a kijelzőt, talán könnyebb debugolni
       Device.PC.BacklightIsOn = false;
       Device.PC.BacklightIntensity = 0;
+      Device.PC.BacklightOnProtectionCompleted = false; // következő bekpcsolásnál ha lejár az idő akkor bekpcsolja a kijelzőt, ez akadályozza meg hogy a User által kikapcsolt kijelzőt újra bekapcsolja
     }
     Device.PC.PsuStatePre =  Device.PC.PsuState;
   }
@@ -81,18 +83,19 @@ void PwrSeq_Task(void)
   {
     if(HAL_GetTick() - timestamp > DISPLAY_TIMOEUT_MS)
     {
-       if(Device.PC.BacklightIsOn == false)
+       if(Device.PC.BacklightIsOn == false && !Device.PC.BacklightOnProtectionCompleted)
        {
          //ha: fut a PC és letet az idő és nincs bekacsolva a kijelző -> akkor bekapcsolja a kijelzőt
+         //de ezt csak 1x kell hogy megcsinálja mert később a User kikapcsolhatja a kijelzőt
          Device.PC.BacklightIsOn = true;
          Device.PC.BacklightIntensity = 50;
          Device.Diag.ForceBacklightOnCnt++;
        }
-       else
-       {//lejárt a timeout, de a PC már bekacsolta a kijelzőt
-         //ideális esetben itt ciklik
-         timestamp = 0;
-       }
+       //lejárt a timeout, de a PC már bekacsolta a kijelzőt
+       //ideális esetben itt ciklik
+       timestamp = 0;
+       //ez akadályozza meg hogy többször is bekapcsolja a kijelzőt
+       Device.PC.BacklightOnProtectionCompleted = true;
     }
   }
 
