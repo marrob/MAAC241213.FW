@@ -46,8 +46,9 @@ typedef struct REFOXCO_st
   uint16_t LSB_Voltage;
   uint16_t LSB_Current;
   uint16_t INA226_DIE_ID;  //diag only 0x2260
-  uint32_t LSB_Temperature;
-  float Temperature; // csak a LegacyTriclock-ban van, az I2C-s nem tudja
+  uint16_t LSB_Temperature;
+  float Temperature;          //I2C-s   hőmérő
+  float LegacyTemperature;    //Analog -hőmérő
   bool ExtRef;
 }REFOCXO_t;
 
@@ -116,7 +117,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250505_2132"
+#define DEVICE_FW               "250714_1649"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)
@@ -146,7 +147,7 @@ typedef struct _Devic_t
 #define OCXO1_TMP100_ADDRESS        0x98  //U376
 
 #define REFOCXO_INA226_ADDRESS      0x80  //U109
-
+#define REFOCXO_TMP100_ADDRESS      0x90  //U114
 
 /* USER CODE END EM */
 

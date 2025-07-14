@@ -24,6 +24,10 @@ inline static void PowerOn_P20(void);
 inline static void PowerOn_P24(void);
 inline static void PowerOn_NVME(void);
 
+
+
+#define DISPLAY_TIMOEUT_MS 35000
+
 bool PcPsuIsOn(void);
 
 /* Private user code ---------------------------------------------------------*/
@@ -75,7 +79,7 @@ void PwrSeq_Task(void)
 
   if(Device.PC.PsuState == true)
   {
-    if(HAL_GetTick() - timestamp > 10000)
+    if(HAL_GetTick() - timestamp > DISPLAY_TIMOEUT_MS)
     {
        if(Device.PC.BacklightIsOn == false)
        {
@@ -152,6 +156,7 @@ inline static bool DoesRun_NVME(void){
 
 //--- Backlight  ---
 static TIM_HandleTypeDef *_htim;
+
 void Backlight_On(void)
 {
   HAL_GPIO_WritePin(BLIGHT_RLY_GPIO_Port, BLIGHT_RLY_Pin, GPIO_PIN_SET);

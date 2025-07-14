@@ -116,12 +116,14 @@ static void Parser(char *request, char *response)
         Device.TriClock.OCXO3.IsLocked?'L':'N');
   }
   else if(!strcmp(cmd, "TRICLOCK:REFOCXO:STAT?")){
-    sprintf(response, "%05.2f;%05.2f;%05.2f;%c",
+    sprintf(response, "%05.2f;%05.2f;%05.2f;%05.2f;%c",
         Device.TriClock.REFOCXO.Voltage,
         Device.TriClock.REFOCXO.Current,
         Device.TriClock.REFOCXO.Temperature,
+        Device.TriClock.REFOCXO.LegacyTemperature,
         Device.TriClock.REFOCXO.ExtRef?'E':'I');
   }
+  //25.07.14 Törlésre jelölve
   else if(!strcmp(cmd, "TRICLOCK:LEGACY:STAT?")){
     sprintf(response, "%c;%c;%c",
         Device.TriClock.LegacyIsLocked1?'L':'N',

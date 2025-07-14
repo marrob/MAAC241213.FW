@@ -111,15 +111,17 @@ void TriClock_Task(void)
     INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Voltage);
     Device.TriClock.REFOCXO.Voltage = INA226_ConvertToVoltage(Device.TriClock.REFOCXO.LSB_Voltage);
 
-    INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Current);
-    Device.TriClock.REFOCXO.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.REFOCXO.LSB_Current);
+    TMP100_Read(_i2ch, REFOCXO_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.REFOCXO.LSB_Temperature);
+    Device.TriClock.REFOCXO.Temperature = TMP100_ConvertToCelsius(Device.TriClock.REFOCXO.LSB_Temperature);
 
-
-    Device.TriClock.REFOCXO.LSB_Temperature = MCP3421_NonBlocking_GetVale();
-    float lsb = 2 * (2.048 / 16384);
-    float volts = Device.TriClock.REFOCXO.LSB_Temperature * lsb;
-    Device.TriClock.REFOCXO.Temperature = (-2.3654*volts*volts) + (-78.154*volts) + 153.857;
+    // Ez az I2C és a Legacy órában is azonos
     Device.TriClock.REFOCXO.ExtRef = Get_External_Reference();
+
+
+    uint16_t legacy_temp_lsb = MCP3421_NonBlocking_GetVale();
+    float lsb = 2 * (2.048 / 16384);
+    float volts = legacy_temp_lsb * lsb;
+    Device.TriClock.REFOCXO.LegacyTemperature = (-2.3654*volts*volts) + (-78.154*volts) + 153.857;
 
     //--- Legacy Locks  ---
     Device.TriClock.LegacyIsLocked3 = Get_OCXO3_Lock();
