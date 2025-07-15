@@ -123,14 +123,6 @@ static void Parser(char *request, char *response)
         Device.TriClock.REFOCXO.LegacyTemperature,
         Device.TriClock.REFOCXO.ExtRef?'E':'I');
   }
-  //25.07.14 Törlésre jelölve
-  else if(!strcmp(cmd, "TRICLOCK:LEGACY:STAT?")){
-    sprintf(response, "%c;%c;%c",
-        Device.TriClock.LegacyIsLocked1?'L':'N',
-        Device.TriClock.LegacyIsLocked2?'L':'N',
-        Device.TriClock.LegacyIsLocked3?'L':'N');
-  }
-
   else{
     Device.Diag.UartUnknwonCnt++;
   }

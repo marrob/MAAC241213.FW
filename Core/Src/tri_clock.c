@@ -122,11 +122,6 @@ void TriClock_Task(void)
     float lsb = 2 * (2.048 / 16384);
     float volts = legacy_temp_lsb * lsb;
     Device.TriClock.REFOCXO.LegacyTemperature = (-2.3654*volts*volts) + (-78.154*volts) + 153.857;
-
-    //--- Legacy Locks  ---
-    Device.TriClock.LegacyIsLocked3 = Get_OCXO3_Lock();
-    Device.TriClock.LegacyIsLocked2 = Get_OCXO2_Lock();
-    Device.TriClock.LegacyIsLocked1 = Get_OCXO1_Lock();
   }
 }
 

@@ -83,10 +83,6 @@ typedef struct _Devic_t
   {
     OCXO_t OCXO1, OCXO2, OCXO3;
     REFOCXO_t REFOCXO;
-    bool LegacyIsLocked1;
-    bool LegacyIsLocked2;
-    bool LegacyIsLocked3;
-
   }TriClock;
 
 
@@ -118,7 +114,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250714_1815"
+#define DEVICE_FW               "250715_2039"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)

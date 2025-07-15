@@ -18,34 +18,84 @@ extern Device_t Device;
 
 /* Private function prototypes -----------------------------------------------*/
 
-inline static void PowerOn_CLK(void);
-inline static void PowerOn_ETH(void);
-inline static void PowerOn_P20(void);
-inline static void PowerOn_P24(void);
-inline static void PowerOn_NVME(void);
-
-
 
 #define DISPLAY_TIMOEUT_MS 35000
 
 bool PcPsuIsOn(void);
 
 /* Private user code ---------------------------------------------------------*/
+
+inline static void PowerOn_CLK(void){
+  HAL_GPIO_WritePin(CLK_EN_GPIO_Port, CLK_EN_Pin, GPIO_PIN_SET);
+}
+inline static bool DoesRun_CLK(void){
+  return HAL_GPIO_ReadPin(CLK_EN_GPIO_Port, CLK_EN_Pin) == GPIO_PIN_SET;
+}
+
+inline static void PowerOn_ETH(void){
+  HAL_GPIO_WritePin(ETH_EN_GPIO_Port, ETH_EN_Pin, GPIO_PIN_SET);
+}
+inline static void PowerOff_ETH(void){
+  HAL_GPIO_WritePin(ETH_EN_GPIO_Port, ETH_EN_Pin, GPIO_PIN_RESET);
+}
+
+inline static bool DoesRun_ETH(void){
+  return HAL_GPIO_ReadPin(ETH_EN_GPIO_Port, ETH_EN_Pin) == GPIO_PIN_SET;
+}
+
+inline static void PowerOn_P20(void){
+  HAL_GPIO_WritePin(P20_EN_GPIO_Port, P20_EN_Pin, GPIO_PIN_SET);
+}
+inline static void PowerOff_P20(void){
+  HAL_GPIO_WritePin(P20_EN_GPIO_Port, P20_EN_Pin, GPIO_PIN_RESET);
+}
+
+inline static bool DoesRun_P20(void){
+  return HAL_GPIO_ReadPin(P20_EN_GPIO_Port, P20_EN_Pin) == GPIO_PIN_SET;
+}
+
+inline static void PowerOn_P24(void){
+  HAL_GPIO_WritePin(P24_EN_GPIO_Port, P24_EN_Pin, GPIO_PIN_SET);
+}
+inline static void PowerOff_P24(void){
+  HAL_GPIO_WritePin(P24_EN_GPIO_Port, P24_EN_Pin, GPIO_PIN_RESET);
+}
+
+inline static bool DoesRun_P24(void){
+  return HAL_GPIO_ReadPin(P24_EN_GPIO_Port, P24_EN_Pin) == GPIO_PIN_SET;
+}
+
+inline static void PowerOn_NVME(void){
+  HAL_GPIO_WritePin(NVME_EN_GPIO_Port, NVME_EN_Pin, GPIO_PIN_SET);
+}
+
+inline static void PowerOff_NVME(void){
+  HAL_GPIO_WritePin(NVME_EN_GPIO_Port, NVME_EN_Pin, GPIO_PIN_RESET);
+}
+
+inline static bool DoesRun_NVME(void){
+  return HAL_GPIO_ReadPin(NVME_EN_GPIO_Port, NVME_EN_Pin) == GPIO_PIN_SET;
+}
+
 void PwrSeq_Init(void)
 {
 
   //--- Minden tápegység megy ---
   HAL_Delay(250);
+  PowerOn_CLK();
+/*
+  HAL_Delay(250);
   PowerOn_ETH();
   HAL_Delay(250);
-  PowerOn_P20();
-  HAL_Delay(250);
+  //PowerOn_P20();
+  //HAL_Delay(250);
   PowerOn_P24();
   HAL_Delay(250);
   PowerOn_CLK();
   HAL_Delay(250);
   PowerOn_NVME();
   HAL_Delay(250);
+*/
 
   Device.PC.PsuState = false;
   Device.PC.PsuStatePre = false;
@@ -66,15 +116,35 @@ void PwrSeq_Task(void)
       //Elintult a PC és várjuk, hogy a PC UART-on bekapcsolja a kijelzőt
       timestamp = HAL_GetTick();
       Device.Diag.PcPsuOnCnt ++;
+
+      PowerOn_ETH();
+      HAL_Delay(250);
+      //PowerOn_P20();
+      //HAL_Delay(250);
+      PowerOn_P24();
+      HAL_Delay(250);
+      PowerOn_NVME();
+      HAL_Delay(250);
     }
     else
-    { //Leállt a PC
+    {
+      //Leállt a PC
       timestamp = 0;
       Device.Diag.PcPsuOffCnt ++;
       //kikapcsolja a kijelzőt, talán könnyebb debugolni
       Device.PC.BacklightIsOn = false;
       Device.PC.BacklightIntensity = 0;
       Device.PC.BacklightOnProtectionCompleted = false; // következő bekpcsolásnál ha lejár az idő akkor bekpcsolja a kijelzőt, ez akadályozza meg hogy a User által kikapcsolt kijelzőt újra bekapcsolja
+
+      PowerOff_ETH();
+      HAL_Delay(250);
+     // PowerOff_P20();
+     // HAL_Delay(250);
+      PowerOff_P24();
+      HAL_Delay(250);
+      PowerOff_NVME();
+      HAL_Delay(250);
+
     }
     Device.PC.PsuStatePre =  Device.PC.PsuState;
   }
@@ -118,43 +188,7 @@ void PwrSeq_Task(void)
 }
 
 
-inline static void PowerOn_CLK(void){
-  HAL_GPIO_WritePin(CLK_EN_GPIO_Port, CLK_EN_Pin, GPIO_PIN_SET);
-}
-inline static bool DoesRun_CLK(void){
-  return HAL_GPIO_ReadPin(CLK_EN_GPIO_Port, CLK_EN_Pin) == GPIO_PIN_SET;
-}
 
-inline static void PowerOn_ETH(void){
-  HAL_GPIO_WritePin(ETH_EN_GPIO_Port, ETH_EN_Pin, GPIO_PIN_SET);
-}
-inline static bool DoesRun_ETH(void){
-  return HAL_GPIO_ReadPin(ETH_EN_GPIO_Port, ETH_EN_Pin) == GPIO_PIN_SET;
-}
-
-inline static void PowerOn_P20(void){
-  HAL_GPIO_WritePin(P20_EN_GPIO_Port, P20_EN_Pin, GPIO_PIN_SET);
-}
-
-inline static bool DoesRun_P20(void){
-  return HAL_GPIO_ReadPin(P20_EN_GPIO_Port, P20_EN_Pin) == GPIO_PIN_SET;
-}
-
-inline static void PowerOn_P24(void){
-  HAL_GPIO_WritePin(P24_EN_GPIO_Port, P24_EN_Pin, GPIO_PIN_SET);
-}
-
-inline static bool DoesRun_P24(void){
-  return HAL_GPIO_ReadPin(P24_EN_GPIO_Port, P24_EN_Pin) == GPIO_PIN_SET;
-}
-
-inline static void PowerOn_NVME(void){
-  HAL_GPIO_WritePin(NVME_EN_GPIO_Port, NVME_EN_Pin, GPIO_PIN_SET);
-}
-
-inline static bool DoesRun_NVME(void){
-  return HAL_GPIO_ReadPin(NVME_EN_GPIO_Port, NVME_EN_Pin) == GPIO_PIN_SET;
-}
 
 
 //--- Backlight  ---
