@@ -19,7 +19,7 @@ extern Device_t Device;
 /* Private function prototypes -----------------------------------------------*/
 
 
-#define DISPLAY_TIMOEUT_MS 35000
+#define DISPLAY_TIMOEUT_MS 60000
 
 bool PcPsuIsOn(void);
 
@@ -119,8 +119,8 @@ void PwrSeq_Task(void)
 
       PowerOn_ETH();
       HAL_Delay(250);
-      //PowerOn_P20();
-      //HAL_Delay(250);
+      PowerOn_P20();
+      HAL_Delay(250);
       PowerOn_P24();
       HAL_Delay(250);
       PowerOn_NVME();
@@ -138,8 +138,8 @@ void PwrSeq_Task(void)
 
       PowerOff_ETH();
       HAL_Delay(250);
-     // PowerOff_P20();
-     // HAL_Delay(250);
+      PowerOff_P20();
+      HAL_Delay(250);
       PowerOff_P24();
       HAL_Delay(250);
       PowerOff_NVME();
