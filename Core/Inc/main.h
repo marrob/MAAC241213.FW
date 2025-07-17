@@ -71,6 +71,9 @@ typedef struct _Devic_t
     uint32_t LcdTimeout;
     uint32_t UartUnknwonCnt;
     uint32_t UartErrorCnt;
+    uint32_t UartDmaOverrunCnt;
+    uint32_t UartDmaErrorCnt;
+    uint32_t UartDmaStartErrorCnt;
     uint32_t UpTimeSec;
     uint32_t TransactionCnt;
     uint32_t BacklightChangedCnt;
@@ -114,7 +117,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250715_2039"
+#define DEVICE_FW               "250717_2014"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)

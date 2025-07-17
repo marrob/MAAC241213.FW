@@ -15,6 +15,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static UART_HandleTypeDef *_uart;
+static DMA_HandleTypeDef *_dma;
 extern Device_t Device;
 
 char  UartRxBuffer[UART_BUFFER_SIZE];
@@ -28,6 +29,7 @@ static void RxTask(void);
 void UartCom_Init(UART_HandleTypeDef *uart, DMA_HandleTypeDef *dma)
 {
   _uart = uart;
+  _dma = dma;
 
   if(HAL_UART_Receive_DMA(_uart, (uint8_t*)UartRxBuffer, UART_BUFFER_SIZE)!= HAL_OK)
     Device.Diag.UartErrorCnt++;
@@ -128,6 +130,14 @@ static void Parser(char *request, char *response)
   }
 }
 
+static inline void DMA_ReStart(void)
+{
+  memset(UartRxBuffer, 0x00, UART_BUFFER_SIZE);
+  HAL_UART_DMAStop(_uart);
+  if(HAL_UART_Receive_DMA(_uart, (uint8_t*)UartRxBuffer, UART_BUFFER_SIZE)!= HAL_OK)
+    Device.Diag.UartDmaStartErrorCnt++;
+}
+
 static void TxTask(void)
 {
   uint8_t txLen = strlen(UartTxBuffer);
@@ -143,6 +153,9 @@ static void TxTask(void)
 
 static void RxTask(void)
 {
+  uint16_t remaining = __HAL_DMA_GET_COUNTER(_dma);
+  uint16_t received = UART_BUFFER_SIZE - remaining;
+
   for(uint8_t i=0; i < UART_BUFFER_SIZE; i++)
   {
     if(UartRxBuffer[i] == UART_TERIMINATION_CHAR)
@@ -151,8 +164,13 @@ static void RxTask(void)
       Parser(UartRxBuffer, UartTxBuffer);
       memset(UartRxBuffer, 0x00, UART_BUFFER_SIZE);
       if(HAL_UART_Receive_DMA(_uart, (uint8_t*)UartRxBuffer, UART_BUFFER_SIZE)!= HAL_OK)
-        Device.Diag.UartErrorCnt++;
+        Device.Diag.UartDmaStartErrorCnt++;
       Device.Diag.TransactionCnt++;
+    }
+    else if(received == UART_BUFFER_SIZE)
+    {
+      Device.Diag.UartDmaOverrunCnt++;
+      DMA_ReStart();
     }
   }
 }
@@ -164,6 +182,8 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   __HAL_UART_CLEAR_FEFLAG(huart);
   __HAL_UART_CLEAR_NEFLAG(huart);
   __HAL_UART_CLEAR_OREFLAG(huart);
+
+  DMA_ReStart();
 }
 
 void UART_DMAError(UART_HandleTypeDef *huart)
