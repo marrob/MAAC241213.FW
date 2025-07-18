@@ -111,6 +111,9 @@ void TriClock_Task(void)
     INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_BUS_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Voltage);
     Device.TriClock.REFOCXO.Voltage = INA226_ConvertToVoltage(Device.TriClock.REFOCXO.LSB_Voltage);
 
+    INA226_Read(_i2ch, REFOCXO_INA226_ADDRESS, INA226_REG_SHUNT_VOLTAGE, &Device.TriClock.REFOCXO.LSB_Current);
+    Device.TriClock.REFOCXO.Current = INA226_ConvertToCurrent(0.04F, Device.TriClock.REFOCXO.LSB_Current);
+
     TMP100_Read(_i2ch, REFOCXO_TMP100_ADDRESS, TMP100_REG_TEMPERATURE, &Device.TriClock.REFOCXO.LSB_Temperature);
     Device.TriClock.REFOCXO.Temperature = TMP100_ConvertToCelsius(Device.TriClock.REFOCXO.LSB_Temperature);
 

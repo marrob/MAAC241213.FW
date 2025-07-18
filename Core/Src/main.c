@@ -169,6 +169,28 @@ int main(void)
   hLiveLed.HalfPeriodTimeMs = 500;
   LiveLedInit(&hLiveLed);
 
+  //--- EEPROM ---
+  Eeprom_Init(&hi2c2, EEPROM_DEVICE_ADDRESS);
+
+  uint32_t startSign;
+  Eeprom_ReadU32(EEPROM_ADDR_FIRST_START, &startSign);
+  if(startSign != 0x55AA)
+  {
+    //--- FIRST START ---
+    Eeprom_WriteU32(EEPROM_ADDR_FIRST_START, 0x55AA);
+    Eeprom_WriteU32(EEPROM_ADDR_BOOTUP_CNT, 0);
+    Eeprom_WriteU32(EEPROM_ADDR_BKLIGHT_TIMEOUT_SEC, 60);
+  }
+
+  //--- Backlight Timeout ---
+  Eeprom_ReadU32(EEPROM_ADDR_BKLIGHT_TIMEOUT_SEC, &Device.PC.BacklightTimeoutSec);
+
+  //--- BOOTUP COUNTER ---
+  Eeprom_ReadU32(EEPROM_ADDR_BOOTUP_CNT, &Device.Diag.BootupCnt);
+  Device.Diag.BootupCnt++;
+  Eeprom_WriteU32(EEPROM_ADDR_BOOTUP_CNT, Device.Diag.BootupCnt);
+
+
   //--- Communication ---
   UartCom_Init(&huart1, &hdma_usart1_rx);
 
@@ -628,9 +650,7 @@ void DrawDisplay(void)
         timestamp = HAL_GetTick();
       DisplaySetCursor(0, 0);
                        /*0123456789012345*/
-      DisplayDrawString("     UPTIME     ", &GfxFont7x8, SSD1306_WHITE);
-      DisplaySetCursor(0, 8);
-      sprintf(string,"%ld", Device.Diag.UpTimeSec);
+      sprintf(string,"BootCnt:%ld\nUpTime:%ld", Device.Diag.BootupCnt, Device.Diag.UpTimeSec);
       DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_VERSION;

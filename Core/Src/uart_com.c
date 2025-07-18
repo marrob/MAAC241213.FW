@@ -87,6 +87,15 @@ static void Parser(char *request, char *response)
     Device.PC.BacklightIsOn = false;
     strcpy(response, "OK");
   }
+  else if(!strcmp(cmd, "BLIGHT:TIMEOUT?")){
+    sprintf(response, "%lu", Device.PC.BacklightTimeoutSec);
+  }
+  else if(!strcmp(cmd, "BLIGHT:TIMEOUT")){
+    sscanf(request, "%s %s", cmd, arg1);
+    Device.PC.BacklightTimeoutSec = strtol(arg1, NULL, 10);
+    Eeprom_WriteU32(EEPROM_ADDR_BKLIGHT_TIMEOUT_SEC, Device.PC.BacklightTimeoutSec);
+    strcpy(response, "OK");
+  }
 
   else if(!strcmp(cmd, "BLIGHT:PWM")){
     sscanf(request, "%s %s", cmd, arg1);

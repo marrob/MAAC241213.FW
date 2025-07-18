@@ -83,19 +83,6 @@ void PwrSeq_Init(void)
   //--- Minden tápegység megy ---
   HAL_Delay(250);
   PowerOn_CLK();
-/*
-  HAL_Delay(250);
-  PowerOn_ETH();
-  HAL_Delay(250);
-  //PowerOn_P20();
-  //HAL_Delay(250);
-  PowerOn_P24();
-  HAL_Delay(250);
-  PowerOn_CLK();
-  HAL_Delay(250);
-  PowerOn_NVME();
-  HAL_Delay(250);
-*/
 
   Device.PC.PsuState = false;
   Device.PC.PsuStatePre = false;
@@ -151,7 +138,7 @@ void PwrSeq_Task(void)
 
   if(Device.PC.PsuState == true)
   {
-    if(HAL_GetTick() - timestamp > DISPLAY_TIMOEUT_MS)
+    if(HAL_GetTick() - timestamp > /*DISPLAY_TIMOEUT_MS*/ Device.PC.BacklightTimeoutSec * 1000)
     {
        if(Device.PC.BacklightIsOn == false && !Device.PC.BacklightOnProtectionCompleted)
        {

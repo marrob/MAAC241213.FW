@@ -68,7 +68,6 @@ typedef struct _Devic_t
 {
   struct _Diag
   {
-    uint32_t LcdTimeout;
     uint32_t UartUnknwonCnt;
     uint32_t UartErrorCnt;
     uint32_t UartDmaOverrunCnt;
@@ -80,6 +79,7 @@ typedef struct _Devic_t
     uint32_t PcPsuOnCnt;
     uint32_t PcPsuOffCnt;
     uint32_t ForceBacklightOnCnt;
+    uint32_t BootupCnt;
   }Diag;
 
   struct _Triclock
@@ -87,6 +87,7 @@ typedef struct _Devic_t
     OCXO_t OCXO1, OCXO2, OCXO3;
     REFOCXO_t REFOCXO;
   }TriClock;
+
 
 
   struct _PC_st
@@ -98,7 +99,7 @@ typedef struct _Devic_t
     bool PsuStatePre;
     bool PsuState;
     bool BacklightOnProtectionCompleted;
-
+    uint32_t BacklightTimeoutSec;
   }PC;
 
 
@@ -117,7 +118,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250717_2028"
+#define DEVICE_FW               "250718_1520"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)
@@ -149,6 +150,14 @@ typedef struct _Devic_t
 #define REFOCXO_INA226_ADDRESS      0x80  //U109
 #define REFOCXO_TMP100_ADDRESS      0x90  //U114
 
+#define EEPROM_DEVICE_ADDRESS       0xA2 //24AA025E48
+
+// --- EEPROM MAP ---
+#define EEPROM_ADDR_FIRST_START           0x0000
+#define EEPROM_ADDR_BOOTUP_CNT            0x0004
+#define EEPROM_ADDR_BKLIGHT_TIMEOUT_SEC   0x0008
+
+
 /* USER CODE END EM */
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -178,6 +187,12 @@ uint8_t Backlight_GetDuty(void);
 //--- TriClock ---
 void TriClock_Init(I2C_HandleTypeDef *i2ch);
 void TriClock_Task(void);
+
+
+// --- EEPROM ---
+void Eeprom_Init(I2C_HandleTypeDef *hi2c, uint8_t deviceAddress);
+HAL_StatusTypeDef Eeprom_ReadU32(uint8_t address, uint32_t *data);
+HAL_StatusTypeDef Eeprom_WriteU32(uint8_t address, uint32_t data);
 
 
 /* USER CODE END EFP */
