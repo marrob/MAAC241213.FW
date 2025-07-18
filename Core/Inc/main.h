@@ -118,7 +118,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250718_1520"
+#define DEVICE_FW               "250718_1609"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)
