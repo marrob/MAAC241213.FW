@@ -162,6 +162,10 @@ int main(void)
   DisplayInit(&hi2c2, SSD1306_I2C_DEV_ADDRESS);
   DisplayClear();
   DisplayUpdate();
+  DisplayDrawString("   CORE AUDIO   ", &GfxFont7x8, SSD1306_WHITE );
+  DisplayUpdate();
+
+  HAL_Delay(100);
 
   //--- LiveLed ---
   hLiveLed.LedOffFnPtr = &LiveLedOff;
@@ -169,6 +173,7 @@ int main(void)
   hLiveLed.HalfPeriodTimeMs = 500;
   LiveLedInit(&hLiveLed);
 
+  /*
   //--- EEPROM ---
   Eeprom_Init(&hi2c2, EEPROM_DEVICE_ADDRESS);
 
@@ -190,7 +195,7 @@ int main(void)
   Device.Diag.BootupCnt++;
   Eeprom_WriteU32(EEPROM_ADDR_BOOTUP_CNT, Device.Diag.BootupCnt);
 
-
+*/
   //--- Communication ---
   UartCom_Init(&huart1, &hdma_usart1_rx);
 
