@@ -19,8 +19,6 @@ extern Device_t Device;
 /* Private function prototypes -----------------------------------------------*/
 
 
-#define DISPLAY_TIMOEUT_MS 60000
-
 bool PcPsuIsOn(void);
 
 /* Private user code ---------------------------------------------------------*/
@@ -138,7 +136,7 @@ void PwrSeq_Task(void)
 
   if(Device.PC.PsuState == true)
   {
-    if(HAL_GetTick() - timestamp > /*DISPLAY_TIMOEUT_MS*/ Device.PC.BacklightTimeoutSec * 1000)
+    if(HAL_GetTick() - timestamp > Device.PC.BacklightTimeoutSec * 1000)
     {
        if(Device.PC.BacklightIsOn == false && !Device.PC.BacklightOnProtectionCompleted)
        {

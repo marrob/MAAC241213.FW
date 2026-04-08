@@ -56,7 +56,7 @@
 #include <stdlib.h>
 #include "LiveLed.h"
 #include "vt100.h"
-#include "display.h"
+#include "ssd1306.h"
 #include "mcp3421.h"
 /* USER CODE END Includes */
 
@@ -157,10 +157,10 @@ int main(void)
 
   //--- Backlight Init ---
   Backlight_Init(&htim2, 0);
-
+  HAL_Delay(1500);
 
   //--- Display ---
-  DisplayInit(&hi2c2, SSD1306_I2C_DEV_ADDRESS);
+  SSD1306_Init(&hi2c2, SSD1306_I2C_DEV_ADDRESS);
   DisplayClear();
   DisplayUpdate();
 /*
@@ -235,9 +235,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
-
-
 
 /**
   * @brief System Clock Configuration
@@ -566,11 +563,11 @@ void DrawDisplay(void)
         timestamp = HAL_GetTick();
       /*0123456789012345*/
       DisplaySetCursor(0, 0);
-      DisplayDrawString("   CORE AUDIO   ", &GfxFont7x8, SSD1306_WHITE );
+      DisplayDrawString("   CORE AUDIO   ", &FontType5x7, SSD1306_WHITE );
       DisplaySetCursor(0, 8);
-      DisplayDrawString("      AAC       ", &GfxFont7x8, SSD1306_WHITE );
+      DisplayDrawString("      AAC       ", &FontType5x7, SSD1306_WHITE );
       DisplaySetCursor(0, 16);
-      DisplayDrawString(DEVICE_FW, &GfxFont7x8, SSD1306_WHITE );
+      DisplayDrawString(DEVICE_FW, &FontType5x7, SSD1306_WHITE );
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_OCXO1;
       break;
@@ -585,7 +582,7 @@ void DrawDisplay(void)
           Device.TriClock.OCXO1.Current,
           Device.TriClock.OCXO1.Temperature,
           Device.TriClock.OCXO1.IsLocked?"LOCK":"UNLOCK");
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE );
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE );
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_OCXO2;
       break;
@@ -600,7 +597,7 @@ void DrawDisplay(void)
           Device.TriClock.OCXO2.Current,
           Device.TriClock.OCXO2.Temperature,
           Device.TriClock.OCXO2.IsLocked?"LOCK":"UNLOCK");
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE );
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE );
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_OCXO3;
       break;
@@ -616,7 +613,7 @@ void DrawDisplay(void)
           Device.TriClock.OCXO3.Current,
           Device.TriClock.OCXO3.Temperature,
           Device.TriClock.OCXO3.IsLocked?"LOCK":"UNLOCK");
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE);
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_REF;
       break;
@@ -632,7 +629,7 @@ void DrawDisplay(void)
           Device.TriClock.REFOCXO.Current,
           Device.TriClock.REFOCXO.Temperature,
           Device.TriClock.REFOCXO.ExtRef?"EXT":"INT");
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE);
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_PC;
       break;
@@ -648,7 +645,7 @@ void DrawDisplay(void)
           Device.PC.BacklightIsOn?"ON":"OFF",
           Device.PC.BacklightIntensity,
           Device.Diag.PcPsuOnCnt);
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE);
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_LIVE;
       break;
@@ -660,7 +657,7 @@ void DrawDisplay(void)
       DisplaySetCursor(0, 0);
                        /*0123456789012345*/
       sprintf(string,"BootCnt:%ld\nUpTime:%ld", Device.Diag.BootupCnt, Device.Diag.UpTimeSec);
-      DisplayDrawString(string, &GfxFont7x8, SSD1306_WHITE);
+      DisplayDrawString(string, &FontType5x7, SSD1306_WHITE);
       if(HAL_GetTick() - timestamp > DISP_INTER_DELAY_MS)
         dispNext = DISP_VERSION;
       break;
@@ -689,8 +686,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

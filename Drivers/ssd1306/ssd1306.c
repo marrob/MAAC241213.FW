@@ -1,11 +1,11 @@
 /*
  * ssd1306.c
  *
- *  Created on: Nov 27, 2023
+ *  Created on: Oct 24, 2025
  *      Author: marrob
  */
 /* Includes ------------------------------------------------------------------*/
-#include <SSD1306.h>
+#include "ssd1306.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -142,7 +142,7 @@ static inline void WriteCommands(uint8_t *commands, size_t count)
   uint8_t *buffer = (uint8_t*)malloc(count + 1);
   if(buffer != NULL)
   {
-    buffer[0] = 0x00; /* D/C byte -> Command */
+    buffer[0] = 0x00; // D/C byte -> Command
     memcpy(buffer + 1, commands, count);
     Write(buffer, count + 1);
     free(buffer);
@@ -153,6 +153,7 @@ static inline void Write(uint8_t* wdata, size_t wlength)
 {
   HAL_I2C_Master_Transmit(_i2c, _devAddress, wdata, wlength, 100);
 }
+
 
 /* *****************************************************************************
  End of File

@@ -118,7 +118,7 @@ typedef struct _Devic_t
 
 #define DEVICE_NAME             "MAAC241213.FW"
 #define DEVICE_NAME_SIZE        sizeof(DEVICE_NAME)
-#define DEVICE_FW               "250718_1609"
+#define DEVICE_FW               "260223_0916"
 #define DEVICE_FW_SIZE          sizeof(DEVICE_FW)
 #define DEVICE_PCB              "V00"
 #define DEVICE_PCB_SIZE         sizeof(DEVICE_PCB)
@@ -156,6 +156,15 @@ typedef struct _Devic_t
 #define EEPROM_ADDR_FIRST_START           0x0000
 #define EEPROM_ADDR_BOOTUP_CNT            0x0004
 #define EEPROM_ADDR_BKLIGHT_TIMEOUT_SEC   0x0008
+
+//--- SSD1306 Support ---
+#define DisplayDrawString           SSD1306_DrawString
+#define DisplayClear                SSD1306_Clear
+#define DisplaySetCursor            SSD1306_SetCursor
+#define DisplayDrawLine             SSD1306_DrawLine
+#define DisplayDrawCircle           SSD1306_DrawCircle
+#define DisplayDrawFilledRectnagle  SSD1306_FilledRectangle
+#define DisplayUpdate               SSD1306_Update
 
 
 /* USER CODE END EM */
